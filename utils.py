@@ -73,7 +73,7 @@ def cross_validation(data, label, clf=svm.SVC(), fold=10):
         acc_mean += get_acc(label[l:r], result[l:r])
         #print('fold %d: %lf' % (i, acc))
     print('cross-validation acc:', acc_mean / fold)
-    return label, result
+    return result
 
 def time2freq(a, fs, segment=None):
     n = a.shape[1]

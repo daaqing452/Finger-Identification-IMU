@@ -1,6 +1,6 @@
 .DS_Store
-/__pycache__/*
-/GY9250 MPU9250 资料/*
-/JY901 资料/*
-/串口转换器/*
-/data/*
+/__pycache__
+/GY9250 MPU9250 资料
+/JY901 资料
+/串口转换器
+/data
