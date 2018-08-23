@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import sys
+import pickle
 from utils import *
 
 def read(f):
@@ -22,6 +23,7 @@ def read(f):
 filename = sys.argv[1]
 f = open(filename, 'r')
 a, b, c = read(f)
+# pickle.dump((a, b), open('6.pkl', 'wb'))
 print('tap num:', len(b))
 f.close()
 
