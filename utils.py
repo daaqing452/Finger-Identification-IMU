@@ -5,49 +5,6 @@ import sys
 from scipy import signal
 from sklearn import svm
 
-def naive_detect(a, fs=200.0, win_t=0.3, axes=[0,1,2], win_bias='m', thres=None):
-    if thres is None: thres = [0.5] * len(axes)
-    idle_span = 0.5 * fs
-    n = a.shape[1]
-    b = []
-    mStart = mEnd = -1
-    idle = True
-    for i in range(n):
-        mu = False
-        for j in range(len(axes)):
-            if abs(a[axes[j],i]) > thres[j]:
-                mu = True
-                break
-        if ((idle and mu) or i == n-1) and mStart > -1:
-            b.append((mStart, mEnd + 1))
-        if mu:
-            mEnd = i
-            if idle:
-                mStart = i
-                idle = False
-        else:
-            if i - mEnd > idle_span:
-                idle = True
-    if win_t is not None:
-        win = int(win_t * fs)
-        bb = []
-        for i in range(len(b)):
-            l, r = b[i]
-            k = r - l
-            if k < win:
-                if win_bias == 'l':
-                    r += win - k
-                elif win_bias == 'm':
-                    l -= (win - k) >> 1
-                    r += win - (r - l)
-                elif win_bias == 'r':
-                    l -= win - k
-            if k > win:
-                r -= k - win
-            if l >= 0 and r < n:
-                bb.append((l, r))
-    return bb
-
 def get_accuracy(label, result):
     n = label.shape[0]
     wa_index = np.nonzero(label != result)[0]
@@ -70,8 +27,9 @@ def cross_validation(data, label, clf=svm.SVC(), fold=10):
         label2 = np.concatenate((label[:l], label[r:]))
         clf.fit(data2, label2)
         result[l:r] = clf.predict(data[l:r])
-        acc_mean += get_acc(label[l:r], result[l:r])
-        #print('fold %d: %lf' % (i, acc))
+        acc = get_accuracy(label[l:r], result[l:r])
+        acc_mean += acc
+        print('\tfold %d: %lf' % (i, acc))
     print('cross-validation acc:', acc_mean / fold)
     return result
 
@@ -99,37 +57,6 @@ def kalman_filter(obs, q=0.01):
         p = math.sqrt((1 - h) * k * k)
     return x
 
-
-def plot_time(a, idx=None):
-    if idx is None:
-        idx = np.array(range(a.shape[0]-1)) + 1
-    n = idx.shape[0]
-    for i in range(n):
-        plt.subplot(n, 1, i+1)
-        plt.plot(a[0], a[idx[i]])
-    plt.show()
-
-def plot_time_freq(a, fs, idx=None):
-    if idx is None:
-        idx = np.array(range(3)) + 1
-    af = time2freq(a, fs)
-    n = np.array(idx).shape[0]
-    for i in range(n):
-        plt.subplot(n*2, 1, i+1)
-        plt.plot(a[0], a[idx[i]])
-    for i in range(n):
-        plt.subplot(n*2, 1, i+n+1)
-        plt.plot(af[0], np.abs(af[idx[i]]))
-    plt.show()
-
-def plot_detail(a):
-    row = 9
-    pl = min(row, len(a))
-    for i in range(pl):
-        for j in range(6):
-            plt.subplot(row, 6, i*6+j+1)
-            plt.plot(a[i][j+1])
-    plt.show()
 
 def plot_confusion(a, b, confusion_show=True, plot_show=True):
     a = np.array(a, dtype=int)
@@ -167,18 +94,54 @@ def plot_label_acc(label, result, show=True):
             print('%d\t%.3lf\t%.3lf' % (i, precision*100, recall*100))
     return ps, rs
 
-def plot_segmentation(a, b):
-    c = np.zeros((a.shape[1]))
-    i = 0
-    for (l,r) in b:
-        c[l:r+1] = np.ones((r-l+1))*(i//10+10)
-        i += 1
-    plt.subplot(411)
-    plt.plot(a[0], a[1])
-    plt.subplot(412)
-    plt.plot(a[0], a[2])
-    plt.subplot(413)
-    plt.plot(a[0], a[3])
-    plt.subplot(414)
-    plt.plot(a[0], c)
-    plt.show()
+
+def int8(x):
+    if x < 128:
+        return x
+    else:
+        return x - 256
+
+def read_JY901(s):
+    print('enter0')
+    global acc0
+    global gyro0
+    cnt = 0
+    while True:
+        cnt += 1
+        raw = s.read(1)
+        if raw[0] != 0x55: continue
+        raw = b'' + raw + s.read(10)
+        # acceleration
+        if raw[1] == 0x51:
+            acc[0] = [(int8(raw[3]) << 8) | raw[2], (int8(raw[5]) << 8) | raw[4], (int8(raw[7]) << 8) | raw[6]]
+            acc[0] = np.array(acc[0], dtype=float) / 32768.0 * 16
+        # angular velocity
+        elif raw[1] == 0x52:
+            gyro[0] = [(int8(raw[3]) << 8) | raw[2], (int8(raw[5]) << 8) | raw[4], (int8(raw[7]) << 8) | raw[6]]
+            gyro[0] = np.array(gyro[0], dtype=float) / 32768.0 * 2000
+        # angle
+        elif raw[1] == 0x53:
+            rotation = [(int8(raw[3]) << 8) | raw[2], (int8(raw[5]) << 8) | raw[4], (int8(raw[7]) << 8) | raw[6]]
+            rotation = np.array(rotation, dtype=float) / 32768.0 * 180
+        # quaternion
+        elif raw[1] == 0x59:
+            quaternion = [(int8(raw[3]) << 8) | raw[2], (int8(raw[5]) << 8) | raw[4], (int8(raw[7]) << 8) | raw[6], (int8(raw[9]) << 8) | raw[8]]
+            quaternion = np.array(quaternion, dtype=float) / 32768.0
+
+def read_GY9250(s):
+    print('enter1')
+    global acc1
+    global gyro1
+    s.write(b'\x01')
+    cnt = 0
+    while True:
+        data = s.read(14)
+        # print(type(data))
+        num = []
+        for i in range(7):
+            num.append(int((data[i*2]<<8) | data[i*2+1]))
+            if num[i] > 2**15: num[i] -= 2**16
+        acc[1] = np.array(num[0:3]) / 32768.0 * 16
+        ther = num[3:4]
+        gyro[1] = np.array(num[4:7]) / 32768.0 * 2000
+        cnt += 1

@@ -1,30 +1,16 @@
 # -*- coding: utf-8 -*-
-import matplotlib.pyplot as plt
+import pickle
 import numpy as np
 import pyHook
 import pythoncom
 import serial
 import serial.tools.list_ports
-import datetime
-import time
 import threading
 from utils import *
-
-# configuration
-LOG = True
-PLOT = False
-FRAME = 200
-FPS = 200
 
 # global acceleration & gyroscope
 acc = [[0, 0, 0], [0, 0, 0]]
 gyro = [[0, 0, 0], [0, 0, 0]]
-
-# log file
-if LOG:
-	f = open(datetime.datetime.now().strftime('data/acc-%Y%m%d-%H%M%S')+'.txt','w')
-else:
-	f = None
 
 # get serial
 port_list = list(serial.tools.list_ports.comports())
@@ -60,33 +46,6 @@ def updatePerFrame():
 
 		if cnt % FRAME == 0:
 			print(acc[0], acc[1], gyro[0], gyro[1])
-
-		# plot
-		if PLOT and len(a[0]) > FRAME and cnt % FRAME == 0:
-			for i in range(6):
-				plt.subplot(6, 2, i*2+1)
-				plt.cla()
-				plt.subplot(6, 2, i*2+2)
-				plt.cla()
-			for i in range(6):
-				plt.subplot(6, 2, i*2+1)
-				plt.plot(a[i])
-				plt.subplot(6, 2, i*2+2)
-				plt.plot(g[i])
-			plt.pause(0.001)
-
-		# log file
-		if LOG:
-			f.write(datetime.datetime.now().strftime("%H:%M:%S.%f") + ' ')
-			f.write(str(int(key_press)) + ' ')
-			if key_press == True:
-				key_press = False
-				tapCnt += 1
-				print('tap ', tapCnt)
-			f.write(str(acc[0][0]) + ' ' + str(acc[0][1]) + ' ' + str(acc[0][2]) + ' ')
-			f.write(str(acc[1][0]) + ' ' + str(acc[1][1]) + ' ' + str(acc[1][2]) + ' ')
-			f.write(str(gyro[0][0]) + ' ' + str(gyro[0][1]) + ' ' + str(gyro[0][2]) + ' ')
-			f.write(str(gyro[1][0]) + ' ' + str(gyro[1][1]) + ' ' + str(gyro[1][2]) + '\n')
 
 		# control frequency
 		time.sleep(1.0 / FPS)
