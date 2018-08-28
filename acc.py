@@ -13,7 +13,6 @@ from utils import *
 # configuration
 LOG = True
 PLOT = False
-FRAME = 200
 FPS = 200
 
 # global acceleration & gyroscope
@@ -36,7 +35,7 @@ serials = [ [port_list[1][0], 115200, read_JY901], [port_list[2][0], 115200, rea
 threads = []
 for i in range(len(serials)):
 	s = serial.Serial(serials[i][0], serials[i][1])
-	t = threading.Thread(target=serials[i][2], args=(s,))
+	t = threading.Thread(target=serials[i][2], args=(s, acc, gyro))
 	t.setDaemon(True)
 	t.start()
 	threads.append(t)
@@ -48,9 +47,16 @@ def updatePerFrame():
 	a = [[], [], [], [], [], []]
 	g = [[], [], [], [], [], []]
 	plt.ion()
+	tick = 0
 	cnt = 0
 	tapCnt = 0
 	while True:
+		# control frequency
+		'''tick = time.time()
+		span = tick - last_tick
+		if span < 1.0 / FPS: continue
+		last_tick = tick'''
+
 		cnt += 1
 
 		# get sensing information
@@ -58,11 +64,11 @@ def updatePerFrame():
 			a[i].append(acc[i // 3][i % 3])
 			g[i].append(gyro[i // 3][i % 3])
 
-		if cnt % FRAME == 0:
+		if cnt % FPS == 0:
 			print(acc[0], acc[1], gyro[0], gyro[1])
 
 		# plot
-		if PLOT and len(a[0]) > FRAME and cnt % FRAME == 0:
+		if PLOT and len(a[0]) > FPS and cnt % FPS == 0:
 			for i in range(6):
 				plt.subplot(6, 2, i*2+1)
 				plt.cla()
@@ -88,9 +94,8 @@ def updatePerFrame():
 			f.write(str(gyro[0][0]) + ' ' + str(gyro[0][1]) + ' ' + str(gyro[0][2]) + ' ')
 			f.write(str(gyro[1][0]) + ' ' + str(gyro[1][1]) + ' ' + str(gyro[1][2]) + '\n')
 
-		# control frequency
 		time.sleep(1.0 / FPS)
-
+  
 
 # keyboard event
 def onKeyboardEvent(event):
@@ -99,15 +104,19 @@ def onKeyboardEvent(event):
 		key_press = True
 	return 0
 
-hm = pyHook.HookManager()
-hm.KeyDown = onKeyboardEvent
-hm.HookKeyboard()
+def listenKeyboard():
+	hm = pyHook.HookManager()
+	hm.KeyDown = onKeyboardEvent
+	hm.HookKeyboard()
+	pythoncom.PumpMessages()
+
 key_press = False
 
-# start update per frame
-t = threading.Thread(target=updatePerFrame, args=())
+
+# t = threading.Thread(target=updatePerFrame, args=())
+t = threading.Thread(target=listenKeyboard, args=())
 t.setDaemon(True)
 t.start()
 
-# blocked listen
-pythoncom.PumpMessages()
+# listenKeyboard()
+updatePerFrame()

@@ -28,7 +28,7 @@ def make_data_label(a, b):
 	labels = []
 	for i in range(len(b)):
 		if i % 100 == 0: print('\t', i)
-		raw = a[:, b[i]-30 : b[i]+30]
+		raw = a[:, b[i]-15 : b[i]+15]
 		label = i % 5
 		data = feature(raw)
 		datas.append(data)
@@ -37,8 +37,10 @@ def make_data_label(a, b):
 	labels = np.array(labels)
 	return datas, labels
 
-if False:
-	filename = sys.argv[1]
+optype = sys.argv[1]
+
+if optype == 'train':
+	filename = sys.argv[2]
 	f = open(filename, 'r')
 	a, b = pickle.load(open(filename, 'rb'))
 	print('######### finish loading #########')
@@ -60,13 +62,13 @@ if False:
 	print(get_accuracy(labels, results))
 	joblib.dump(clf, 'model.m')
 
-if True:
-	filename = sys.argv[1]
+if optype == 'test':
+	filename = sys.argv[2]
 	f = open(filename, 'r')
 	a, b = pickle.load(open(filename, 'rb'))
 
 	datas, labels = make_data_label(a, b)
-	clf = joblib.load(sys.argv[2])
+	clf = joblib.load(sys.argv[3])
 	results = clf.predict(datas)
 	print(get_accuracy(labels, results))
 	print(labels)

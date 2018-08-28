@@ -6,7 +6,12 @@ import pythoncom
 import serial
 import serial.tools.list_ports
 import threading
+import time
 from utils import *
+
+# configuration
+FRAME = 200
+FPS = 200
 
 # global acceleration & gyroscope
 acc = [[0, 0, 0], [0, 0, 0]]
@@ -16,13 +21,13 @@ gyro = [[0, 0, 0], [0, 0, 0]]
 port_list = list(serial.tools.list_ports.comports())
 print(port_list[1])
 print(port_list[2])
-serials = [ [port_list[1][0], 115200, read_JY901], [port_list[2][0], 115200, read_GY9250] ]
+serials = [ [port_list[2][0], 115200, read_JY901], [port_list[1][0], 115200, read_GY9250] ]
 
 # set up thread to read serial
 threads = []
 for i in range(len(serials)):
 	s = serial.Serial(serials[i][0], serials[i][1])
-	t = threading.Thread(target=serials[i][2], args=(s,))
+	t = threading.Thread(target=serials[i][2], args=(s, acc, gyro))
 	t.setDaemon(True)
 	t.start()
 	threads.append(t)

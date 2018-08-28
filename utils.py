@@ -101,10 +101,8 @@ def int8(x):
     else:
         return x - 256
 
-def read_JY901(s):
+def read_JY901(s, acc, gyro):
     print('enter0')
-    global acc0
-    global gyro0
     cnt = 0
     while True:
         cnt += 1
@@ -128,10 +126,8 @@ def read_JY901(s):
             quaternion = [(int8(raw[3]) << 8) | raw[2], (int8(raw[5]) << 8) | raw[4], (int8(raw[7]) << 8) | raw[6], (int8(raw[9]) << 8) | raw[8]]
             quaternion = np.array(quaternion, dtype=float) / 32768.0
 
-def read_GY9250(s):
+def read_GY9250(s, acc, gyro):
     print('enter1')
-    global acc1
-    global gyro1
     s.write(b'\x01')
     cnt = 0
     while True:
