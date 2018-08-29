@@ -4,6 +4,7 @@ from sklearn import svm
 from sklearn.externals import joblib
 from utils import *
 
+SPAN = 60
 
 def feature(x):
 	def feature_accelerometer(f, x, norm=True):
@@ -28,7 +29,7 @@ def make_data_label(a, b):
 	labels = []
 	for i in range(len(b)):
 		if i % 100 == 0: print('\t', i)
-		raw = a[:, b[i]-15 : b[i]+15]
+		raw = a[:, b[i]-SPAN//2 : b[i]+SPAN//2]
 		label = i % 5
 		data = feature(raw)
 		datas.append(data)
@@ -68,6 +69,7 @@ if optype == 'test':
 	a, b = pickle.load(open(filename, 'rb'))
 
 	datas, labels = make_data_label(a, b)
+	labels = 4 - labels
 	clf = joblib.load(sys.argv[3])
 	results = clf.predict(datas)
 	print(get_accuracy(labels, results))

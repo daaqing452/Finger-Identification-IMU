@@ -25,21 +25,26 @@ filename = sys.argv[1]
 outname = sys.argv[2]
 f = open(filename, 'r')
 a, b, c = read(f)
+
+# b[193] -= 100
+# c[b[193]] = 1
+
 pickle.dump((a, b), open(outname, 'wb'))
 print('tap num:', len(b))
 f.close()
 
 for i in range(a.shape[0]):
-	a[i] = highpass_filter(a[i])
+	pass
+	# a[i] = highpass_filter(a[i])
 	# a[i] = a[i] - a[i].mean()
-	a[i] = kalman_filter(a[i])
+	# a[i] = kalman_filter(a[i])
 
 plt.figure(1)
 porder = [0, 3, 1, 4, 2, 5, 6, 9, 7, 10, 8, 11]
 for i in range(len(porder)):
 	plt.subplot(6, 2, i+1)
 	plt.plot(a[porder[i]])
-	if i == 0: plt.plot(c * 0.1)
+	if i == 0: plt.plot((c * 0.1))
 
 amp = 0.2
 plt.figure(2)

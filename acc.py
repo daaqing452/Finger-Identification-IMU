@@ -29,7 +29,8 @@ else:
 port_list = list(serial.tools.list_ports.comports())
 print(port_list[1])
 print(port_list[2])
-serials = [ [port_list[1][0], 115200, read_JY901], [port_list[2][0], 115200, read_GY9250] ]
+FIRST = 2
+serials = [ [port_list[FIRST][0], 115200, read_JY901], [port_list[3-FIRST][0], 115200, read_GY9250] ]
 
 # set up thread to read serial
 threads = []
@@ -47,16 +48,16 @@ def updatePerFrame():
 	a = [[], [], [], [], [], []]
 	g = [[], [], [], [], [], []]
 	plt.ion()
-	tick = 0
 	cnt = 0
 	tapCnt = 0
+	# tick = 0
+	# last_tick = -1
 	while True:
 		# control frequency
 		'''tick = time.time()
 		span = tick - last_tick
 		if span < 1.0 / FPS: continue
 		last_tick = tick'''
-
 		cnt += 1
 
 		# get sensing information
