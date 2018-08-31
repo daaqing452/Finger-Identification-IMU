@@ -49,9 +49,11 @@ for i in range(len(porder)):
 amp = 0.2
 plt.figure(2)
 for i in range(10):
-	for j in range(6):
-		plt.subplot(10, 6, i * 6 + j + 1)
-		plt.ylim(-amp, amp)
-		plt.plot(a[j + 0, b[i]-30 : b[i]+30])
+	for j in range(12):
+		now = a[j + 0, b[i]-30 : b[i]+30]
+		now = (now - now.mean()) / now.std()
+		plt.subplot(10, 12, i * 12 + j + 1)
+		# plt.ylim(-amp, amp)
+		plt.plot(now)
 
 plt.show()

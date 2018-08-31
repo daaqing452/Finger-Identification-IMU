@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-from sklearn import svm
+from sklearn import svm, neighbors
 from sklearn.externals import joblib
 from utils import *
 
@@ -55,7 +55,28 @@ if optype == 'train':
 	datas, labels = make_data_label(a, b)
 	print('###### finish featurization ######')
 
-	cross_validation(datas, labels)
+	clf = neighbors.KNeighborsClassifier(3)
+	cross_validation(datas, labels, clf)
+
+	um = np.zeros((5, 24, 200))
+	for i in range(datas.shape[0]):
+		data = datas[i]
+		label = labels[i]
+		um[label, :, i:i+1] = data.reshape((24, 1))
+	for j in range(24):
+		s = '['
+		for i in range(5):
+			l = um[i,j].mean() - um[i,j].std()
+			r = um[i,j].mean() + um[i,j].std()
+			s += '('
+			s += str(int(um[i,j].mean() * 100) / 100.0)
+			s += ','
+			s += str(int(l * 100) / 100.0)
+			s += ','
+			s += str(int(r * 100) / 100.0)
+			s += ')\t'
+		s += ']'
+		print(j, s)
 
 	clf = svm.SVC()
 	clf.fit(datas, labels)
